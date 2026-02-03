@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}ApiKey List{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="/public/vendor/dataTables/css/bootstrap.min.css">
+<link rel="stylesheet" href="/public/vendor/dataTables/css/dataTables.bootstrap5.css">
+{% endblock style %}
+
+{% block body %}
+<div class="container-fluid py-2 mt-3">
+    <h1 class="mb-3">Api Key List</h1>
+    <form action="" method="post">
+        <button class="btn btn-primary">New ApiKey</button>
+    </form>
+</div>
+
+<div class="container-fluid py-2 mt-3">
+    <table id="table1" class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>apiKey</th>
+                <th>createdAt</th>
+                <th>action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for apiKey in apiKeys %}
+            <tr>
+                <td>{{loop.index}}</td>
+                <td>{{apiKey.apiKey}}</td>
+                <td>{{apiKey.createdAt}}</td>
+                <td>
+                    <form action="/api-key/delete" method="post">
+                        <input type="hidden" name="apiKey" value="{{apiKey.apiKey}}">
+                        <button class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+        </tfoot>
+    </table>
+</div>
+{% endblock body %}
+
+{% block script %}
+<script src="/public/vendor/dataTables/js/jquery-3.7.1.js"></script>
+<script src="/public/vendor/dataTables/js/dataTables.js"></script>
+<script src="/public/vendor/dataTables/js/dataTables.bootstrap5.js"></script>
+<script src="/public/vendor/dataTables/js/bootstrap.bundle.min.js"></script>
+<script>
+    $('#table1').DataTable({
+        columnDefs: [
+            {
+                targets: 2,
+                render: function (data, type, row) {
+                    if (!data) return '';
+
+                    if (type === 'display') {
+                        const date = new Date(data)
+                        return date.toLocaleString('th-TH')
+                    }
+
+                    return data;
+                }
+            }
+        ]
+    })
+</script>
+{% endblock script %}

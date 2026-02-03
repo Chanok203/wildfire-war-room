@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}User List{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="/public/vendor/dataTables/css/bootstrap.min.css">
+{% endblock style %}
+
+{% block body %}
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <form class="p-4 border rounded shadow w-50" action="" method="POST">
+        <h3 class="text-center">Create User</h3>
+        <div class="mb-3">
+            <div class="row mb-3 align-items-center">
+                <div class="col">
+                    <label for="username" class="col-form-label text-sm-end">Username:</label>
+                </div>
+                <div class="col-sm-9">
+                    <input type="text" name="username" id="username"
+                        class="form-control {{ 'is-invalid' if errors.message.username }}" value="{{data.username}}"
+                        placeholder="user_1" required>
+                    <div class="invalid-feedback">
+                        {{ errors.message.username }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3 align-items-center">
+                <div class="col">
+                    <label for="password" class="col-form-label text-sm-end">Password:</label>
+                </div>
+                <div class="col-sm-9">
+                    <input type="password" name="password" id="password"
+                        class="form-control {{ 'is-invalid' if  errors.message.password }}" placeholder="password_1"
+                        required>
+                    <div class="invalid-feedback">
+                        {{ errors.message.password }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3 align-items-center">
+                <div class="col">
+                    <label for="confirmPassword" class="col-form-label text-sm-end">Confirm Password:</label>
+                </div>
+                <div class="col-sm-9">
+                    <input type="password" name="confirmPassword" id="confirmPassword"
+                        class="form-control {{ 'is-invalid' if  errors.message.password }}" placeholder="password_1"
+                        required>
+                    <div class="invalid-feedback">
+                        {{ errors.message.password }}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Submit</button>
+    </form>
+</div>
+{% endblock body %}
+
+{% block script %}
+<script src="/public/vendor/dataTables/js/bootstrap.bundle.min.js"></script>
+{% endblock script %}

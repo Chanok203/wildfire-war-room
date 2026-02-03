@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AIStatus {
+  PENDING
+  CAPTURING
+  WAITING_AI
+  AI_PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum PushStatus {
+  IDLE
+  PENDING
+  PUSHING
+  PUSHED
+  FAILED
+}
+
+model Mission {
+  id         String     @id
+  name       String
+  droneName  String     @map("drone_name")
+  aiStatus   AIStatus   @default(PENDING) @map("ai_status")
+  pushStatus PushStatus @default(IDLE) @map("push_status")
+
+  latitude  Float
+  longitude Float
+  inputData Json? @map("input_data")
+
+  hotspots Hotspot[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("missions")
+}
+
+model Hotspot {
+  id        String  @id @default(uuid())
+  missionId String  @map("mission_id")
+  mission   Mission @relation(fields: [missionId], references: [id])
+
+  latitude   Float
+  longitude  Float
+  confidence Float?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([missionId])
+  @@map("hotspots")
+}
+
+model User {
+  id           String @id @default(uuid())
+  username     String @unique
+  passwordHash String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+}
+
+model ApiKey {
+  id     String @id @default(uuid())
+  apiKey String @unique
+  createdAt DateTime @default(now())
+}

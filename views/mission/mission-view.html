@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Mission View{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="/public/vendor/leaflet/css/leaflet.css">
+<style>
+    #map {
+        width: 100%;
+        height: 100%;
+        min-height: 600px;
+        z-index: 1;
+    }
+</style>
+{% endblock style %}
+
+{% block body %}
+<div class="container-fluid py-2 mt-3">
+    <h5 class="mb-0">Mission Name: {{mission.name}}</h5>
+    <small class="text-muted">Mission Id: {{mission.id}}</small>
+    <form action="/mission/{{mission.id}}/delete" method="post">
+        <button class="btn btn-outline-danger">
+            Delete
+        </button>
+    </form>
+</div>
+
+<div class="container-fluid flex-grow-1 mt-3">
+    <div class="row h-100 g-0">
+        <div class="col-md-8 p-0 bg-dark d-flex align-items-center justify-content-center">
+
+            <div class="position-relative w-100 h-100 bg-dark">
+                <div id="map"></div>
+            </div>
+
+        </div>
+        <div class="col-md-4 d-flex justify-content-center bg-light p-3">
+            <form action="#" class="w-100" id="dataForm">
+                <h3 class="mb-4 text-center">Hot Spot Forecast</h3>
+                <!-- droneName -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="droneName" class="col-form-label text-sm-end">drone_name:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" value="{{mission.inputData.droneName}}" disabled>
+                    </div>
+                </div>
+
+                <!-- missionName -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="missionName" class="col-form-label text-sm-end">mission_name:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="text" name="missionName" id="missionName" class="form-control"
+                            value="{{mission.inputData.missionName}}" placeholder="mission_01" disabled>
+                    </div>
+                </div>
+
+                <!-- focalLen -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="focalLen" class="col-form-label text-sm-end">focal_len:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.01" name="focalLen" id="focalLen" class="form-control"
+                            value="{{mission.inputData.focalLen}}" placeholder="24.00" disabled>
+                    </div>
+                </div>
+
+                <!-- dzoomRatio -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="dzoomRatio" class="col-form-label text-sm-end">dzoom_ratio:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.01" name="dzoomRatio" id="dzoomRatio" class="form-control"
+                            placeholder="1.00" value="{{mission.inputData.dzoomRatio}}" disabled>
+                    </div>
+                </div>
+
+                <!-- latitude -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="latitude" class="col-form-label text-sm-end">latitude:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.000001" name="latitude" id="latitude" class="form-control"
+                            placeholder="18.684905" value="{{mission.inputData.latitude}}" disabled>
+                    </div>
+                </div>
+
+                <!-- longitude -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="longitude" class="col-form-label text-sm-end">longitude:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.000001" name="longitude" id="longitude" class="form-control"
+                            placeholder="100.213579" value="{{mission.inputData.longitude}}" disabled>
+                    </div>
+                </div>
+
+                <!-- relAlt -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="relAlt" class="col-form-label text-sm-end">rel_alt:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.001" name="relAlt" id="relAlt" class="form-control"
+                            placeholder="75.877" value="{{mission.inputData.relAlt}}" disabled>
+                    </div>
+                </div>
+
+                <!-- absAlt -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="absAlt" class="col-form-label text-sm-end">abs_alt:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.001" name="absAlt" id="absAlt" class="form-control"
+                            placeholder="271.385" value="{{mission.inputData.absAlt}}" disabled>
+                    </div>
+                </div>
+
+                <!-- gbYaw -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="gbYaw" class="col-form-label text-sm-end">gb_yaw:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.1" name="gbYaw" id="gbYaw" class="form-control" placeholder="-8.1"
+                            value="{{mission.inputData.gbYaw}}" disabled>
+                    </div>
+                </div>
+
+                <!-- gbPitch -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="gbPitch" class="col-form-label text-sm-end">gb_pitch:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.1" name="gbPitch" id="gbPitch" class="form-control"
+                            value="{{mission.inputData.gbPitch}}" placeholder="-86.2" disabled>
+                    </div>
+                </div>
+
+                <!-- gbRoll -->
+                <div class="row mb-3 align-items-center">
+                    <div class="col">
+                        <label for="gbRoll" class="col-form-label text-sm-end">gb_roll:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="number" step="0.1" name="gbRoll" id="gbRoll" class="form-control" placeholder="0.0"
+                            value="{{mission.inputData.gbRoll}}" disabled>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock body %}
+
+{% block script %}
+<script src="/public/vendor/leaflet/js/leaflet.js"></script>
+<script src="/public/js/mission-view.js"></script>
+{% endblock script %}

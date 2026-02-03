@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Mission List{% endblock title %}
+
+{% block style %}
+<link rel="stylesheet" href="/public/vendor/dataTables/css/bootstrap.min.css">
+<link rel="stylesheet" href="/public/vendor/dataTables/css/dataTables.bootstrap5.css">
+{% endblock style %}
+
+{% block body %}
+<div class="container-fluid py-2 mt-3">
+    <h1 class="mb-3">Mission List</h1>
+</div>
+
+<div class="container-fluid py-2 mt-3">
+    <table id="table1" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Mission</th>
+                <th>Drone</th>
+                <th>AI Status</th>
+                <th>Push Status</th>
+                <th>HotSpots</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot>
+        </tfoot>
+    </table>
+</div>
+{% endblock body %}
+
+{% block script %}
+<script src="/public/vendor/dataTables/js/jquery-3.7.1.js"></script>
+<script src="/public/vendor/dataTables/js/dataTables.js"></script>
+<script src="/public/vendor/dataTables/js/dataTables.bootstrap5.js"></script>
+<script src="/public/vendor/dataTables/js/bootstrap.bundle.min.js"></script>
+<script src="/public/js/mission-list.js"></script>
+{% endblock script %}

@@ -1,0 +1,28 @@
+# VSCode
+.vscode/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+dist/
+build/
+
+# Python / Virtual Environment
+python_env/
+venv/
+.venv/
+**/__pycache__/
+*.py[cod]
+
+# My Project
+ai-worker/models/*
+missions/*
+
+!**/.gitkeep
+
+/src/generated/prisma
+
+/src/generated/prisma
