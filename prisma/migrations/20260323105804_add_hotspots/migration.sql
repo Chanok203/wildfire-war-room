@@ -17,12 +17,16 @@ FROM "hotspots"
 WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 
 -- 3. View แสดงผลแบบ Polygon (ดึงค่าจาก JSON ตรงๆ)
-CREATE OR REPLACE VIEW hotspots_polygons_spatial AS
+CREATE VIEW hotspots_polygons_spatial AS
 SELECT 
     (ROW_NUMBER() OVER ())::int as qgis_id, 
-    id, mission_id, type,
-    ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)::geometry(GeometryZ, 4326) as geom,
-    confidence, created_at
+    id, 
+    mission_id, 
+    type,
+    -- ใช้ Geometry ปกติ ไม่ต้องระบุ Z เพื่อให้รับ Data ได้ทุกรูปแบบจาก AI
+    ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)::geometry(Geometry, 4326) as geom,
+    confidence,
+    created_at
 FROM "hotspots"
 WHERE geometry IS NOT NULL;
 
