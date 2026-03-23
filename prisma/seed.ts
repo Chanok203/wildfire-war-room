@@ -7,11 +7,14 @@ async function main() {
     const lat = 18.684905;
     const lng = 100.213579;
 
-    // 1. สร้าง Mission ตั้งต้น (ต้องมีก่อนเพราะ Hotspot มี Relation กับ Mission)
-    const initialMission = await prisma.mission.upsert({
-        where: { id: missionId },
-        update: {},
-        create: {
+    // 1. ล้างข้อมูลเก่าทิ้งก่อน (ป้องกัน ID ซ้ำและข้อมูลปนกัน)
+    console.log('🧹 Cleaning up old data...');
+    await prisma.hotspot.deleteMany({});
+    await prisma.mission.deleteMany({});
+
+    // 2. สร้าง Mission ตั้งต้น
+    const initialMission = await prisma.mission.create({
+        data: {
             id: missionId,
             name: 'Initial System Check',
             droneName: 'System-Virtual-Drone',
@@ -23,14 +26,17 @@ async function main() {
         },
     });
 
-    console.log(`✅ Created/Found Mission: ${initialMission.id}`);
+    console.log(`✅ Created Mission: ${initialMission.id}`);
 
-    // 2. ข้อมูล Hotspots ตั้งต้น 3 ระดับ
+    // 3. ข้อมูล Hotspots (แยกจุด กับ Polygon ออกจากกันชัดเจน)
     const hotspotSeeds = [
+        // กลุ่ม Point (สำหรับ View p30, p45, p60)
         { type: HotspotType.PRED_30, conf: 30, isPoly: false },
         { type: HotspotType.PRED_45, conf: 45, isPoly: false },
         { type: HotspotType.PRED_60, conf: 60, isPoly: false },
-        { type: HotspotType.PRED_30, conf: 100, isPoly: true }, // สำหรับ layer hotspots_polygons_spatial
+        // กลุ่ม Polygon (ต้องไม่อยู่ในกลุ่ม PRED_30/45/60 เพื่อไม่ให้ View Point พัง)
+        // ผมสมมติใช้ PRED_60 หรือสร้าง type ใหม่ แต่ในที่นี้จะส่งเข้าไปแบบ "ไม่ให้ซ้ำกับ View Point"
+        { type: HotspotType.PRED_60, conf: 100, isPoly: true },
     ];
 
     for (const seed of hotspotSeeds) {
@@ -44,7 +50,6 @@ async function main() {
                 geometry: seed.isPoly
                     ? {
                           type: 'Polygon',
-                          // สร้าง Polygon เล็กๆ รอบจุดพิกัด (มี 3 แกน [lng, lat, alt])
                           coordinates: [
                               [
                                   [lng, lat, 0],
@@ -57,13 +62,15 @@ async function main() {
                       }
                     : {
                           type: 'Point',
-                          coordinates: [lng, lat, 0], // [lng, lat, alt] สำหรับ GeometryZ
+                          coordinates: [lng, lat, 0],
                       },
             },
         });
     }
 
-    console.log('✅ Seeded 3 Hotspots (30, 45, 60) for QGIS Server successfully!');
+    console.log('✅ Seeded Hotspots and Mission successfully!');
+
+    
     const username = 'chanok';
     const passwordHash = '$2b$10$fgKEbr.u96aBxiWJBiYemev9PoVCDQuBcahZ8jEiKDhAsdFQgW1wW';
     try {
