@@ -1,3 +1,9 @@
+DROP VIEW IF EXISTS hotspots_p30;
+DROP VIEW IF EXISTS hotspots_p45;
+DROP VIEW IF EXISTS hotspots_p60;
+DROP VIEW IF EXISTS hotspots_polygons_spatial;
+DROP VIEW IF EXISTS hotspots_points_spatial;
+
 -- 1. เปิดใช้งาน Extension PostGIS (ถ้ามีแล้วข้ามได้)
 CREATE EXTENSION IF NOT EXISTS postgis;
 
