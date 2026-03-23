@@ -23,8 +23,8 @@ SELECT
     id, 
     mission_id, 
     type,
-    -- ใช้ Geometry ปกติ ไม่ต้องระบุ Z เพื่อให้รับ Data ได้ทุกรูปแบบจาก AI
-    ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)::geometry(Geometry, 4326) as geom,
+    -- เปลี่ยนจาก Geometry เป็น GeometryZ เพื่อรองรับพิกัด [lng, lat, 0]
+    ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)::geometry(GeometryZ, 4326) as geom,
     confidence,
     created_at
 FROM "hotspots"
