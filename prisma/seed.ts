@@ -3,74 +3,129 @@ import { PrismaClient, AIStatus, PushStatus, HotspotType } from '@prisma/client'
 const prisma = new PrismaClient();
 
 async function main() {
-    const missionId = 'seed-mission-001';
-    const lat = 18.684905;
-    const lng = 100.213579;
+    // 1. นำข้อมูลจากไฟล์ result.json มาใส่ในตัวแปร (ผมย่อพิกัดบางส่วนเพื่อให้โค้ดไม่อ่านยาก)
+    const results = [
+        {
+            filename: 'front_30min.geojson',
+            geojson: {
+                features: [
+                    {
+                        geometry: {
+                            type: 'MultiPolygon',
+                            coordinates: [
+                                [
+                                    [
+                                        [100.2135, 18.68531, 0],
+                                        [100.21343, 18.68525, 0],
+                                        [100.21334, 18.68518, 0],
+                                        [100.21328, 18.68508, 0],
+                                        [100.2135, 18.68531, 0],
+                                    ],
+                                ],
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            filename: 'front_45min.geojson',
+            geojson: {
+                features: [
+                    {
+                        geometry: {
+                            type: 'MultiPolygon',
+                            coordinates: [
+                                [
+                                    [
+                                        [100.2135, 18.68546, 0],
+                                        [100.21342, 18.68542, 0],
+                                        [100.21334, 18.68535, 0],
+                                        [100.2135, 18.68546, 0],
+                                    ],
+                                ],
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            filename: 'front_60min.geojson',
+            geojson: {
+                features: [
+                    {
+                        geometry: {
+                            type: 'MultiPolygon',
+                            coordinates: [
+                                [
+                                    [
+                                        [100.21344, 18.68558, 0],
+                                        [100.21333, 18.68555, 0],
+                                        [100.21323, 18.68548, 0],
+                                        [100.21344, 18.68558, 0],
+                                    ],
+                                ],
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    ];
 
-    // 1. ล้างข้อมูลเก่า (ลำดับสำคัญ: ลบ Hotspot ก่อน Mission)
-    console.log('🧹 Cleaning up old data...');
-    await prisma.hotspot.deleteMany({});
-    await prisma.mission.deleteMany({});
-    // await prisma.user.deleteMany({}); // เปิดใช้ถ้าต้องการล้าง User ด้วย
-
-    // 2. สร้าง Mission ตั้งต้นในพิกัดจังหวัดแพร่
-    const initialMission = await prisma.mission.create({
-        data: {
+    const missionId = 'mission_be1a78a7-ba45-40e3-ae4d-36eb7d7fac03'; // ID ปัจจุบันของคุณ
+    await prisma.mission.upsert({
+        where: { id: missionId },
+        update: {}, // ไม่ต้องแก้อะไรถ้ามีอยู่แล้ว
+        create: {
             id: missionId,
-            name: 'Initial System Check',
-            droneName: 'System-Virtual-Drone',
-            aiStatus: AIStatus.COMPLETED,
-            pushStatus: PushStatus.PUSHED,
-            latitude: lat,
-            longitude: lng,
-            inputData: { info: 'Initial seed for QGIS Server' },
+            name: 'Test Mission from Result JSON',
+            droneName: 'Drone-001',
+            latitude: 18.685, // พิกัดคร่าวๆ ของจังหวัดแพร่
+            longitude: 100.213,
+            aiStatus: 'COMPLETED',
+            pushStatus: 'PENDING',
         },
     });
 
-    console.log(`✅ Created Mission: ${initialMission.id}`);
+    // 2. แปลงข้อมูลโดยใช้ Logic จาก saveResultsToDb
+    const hotspotsToSave = results.map((item) => {
+        let type: HotspotType = HotspotType.PRED_30;
+        if (item.filename.includes('45min')) type = HotspotType.PRED_45;
+        if (item.filename.includes('60min')) type = HotspotType.PRED_60;
 
-    // 3. ข้อมูล Hotspots (ผสมทั้ง Point และ MultiPolygon)
-    const hotspotSeeds = [
-        { type: HotspotType.PRED_30, conf: 30, isMultiPoly: false },
-        { type: HotspotType.PRED_45, conf: 45, isMultiPoly: false },
-        { type: HotspotType.PRED_60, conf: 60, isMultiPoly: false },
-        // ตัวนี้เป็น MultiPolygon เพื่อทดสอบว่า Migration ใหม่เรารับมือไหวไหม
-        { type: HotspotType.PRED_60, conf: 95, isMultiPoly: true },
-    ];
+        const feature = item.geojson.features[0];
 
-    for (const seed of hotspotSeeds) {
-        await prisma.hotspot.create({
-            data: {
-                missionId: missionId,
-                type: seed.type,
-                latitude: lat,
-                longitude: lng,
-                confidence: seed.conf,
-                geometry: seed.isMultiPoly
-                    ? {
-                          type: 'MultiPolygon',
-                          // MultiPolygon ต้องมี Array ซ้อนกัน 4 ชั้น [ [ [ [lng, lat, alt], ... ] ] ]
-                          coordinates: [
-                              [
-                                  [
-                                      [lng, lat, 0],
-                                      [lng + 0.001, lat, 0],
-                                      [lng + 0.001, lat + 0.001, 0],
-                                      [lng, lat + 0.001, 0],
-                                      [lng, lat, 0],
-                                  ],
-                              ],
-                          ],
-                      }
-                    : {
-                          type: 'Point',
-                          coordinates: [lng, lat, 0],
-                      },
-            },
-        });
-    }
+        // สำหรับ MultiPolygon พิกัดจะอยู่ที่ [0][0] เพื่อเข้าถึง Polygon แรก และ Ring แรก
+        const coords = feature.geometry.coordinates[0][0];
 
-    console.log('🚀 Seed process completed at Phrae coordinates!');
+        // คำนวณค่าเฉลี่ยพิกัด (Logic ของคุณ)
+        const avgLat = coords.reduce((sum: number, p: number[]) => sum + p[1], 0) / coords.length;
+        const avgLng = coords.reduce((sum: number, p: number[]) => sum + p[0], 0) / coords.length;
+
+        return {
+            missionId: missionId,
+            type: type,
+            geometry: feature.geometry as any,
+            latitude: avgLat,
+            longitude: avgLng,
+            confidence: 1.0,
+        };
+    });
+
+    console.log(`🧹 Cleaning hotspots for mission: ${missionId}`);
+    await prisma.hotspot.deleteMany({ where: { missionId: missionId } });
+
+    console.log('🚀 Seeding data from real result.json...');
+    await prisma.hotspot.createMany({ data: hotspotsToSave });
+
+    console.log('✅ Done! Check your map now.');
+
+    await seedUser();
+}
+
+async function seedUser() {
     const username = 'chanok';
     const passwordHash = '$2b$10$fgKEbr.u96aBxiWJBiYemev9PoVCDQuBcahZ8jEiKDhAsdFQgW1wW';
     try {
