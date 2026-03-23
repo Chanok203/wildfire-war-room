@@ -10,6 +10,9 @@
     "dev": "SET NODE_ENV=development&& nodemon",
     "create-user": "ts-node src/scripts/create_user.ts"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "@prisma/client": "6.19.2",
     "bcrypt": "^6.0.0",
