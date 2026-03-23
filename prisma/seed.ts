@@ -4,6 +4,8 @@ const prisma = new PrismaClient();
 
 async function main() {
     const missionId = 'seed-mission-001';
+    const lat = 18.684905;
+    const lng = 100.213579;
 
     // 1. สร้าง Mission ตั้งต้น (ต้องมีก่อนเพราะ Hotspot มี Relation กับ Mission)
     const initialMission = await prisma.mission.upsert({
@@ -15,8 +17,8 @@ async function main() {
             droneName: 'System-Virtual-Drone',
             aiStatus: AIStatus.COMPLETED,
             pushStatus: PushStatus.PUSHED,
-            latitude: 0,
-            longitude: 0,
+            latitude: lat,
+            longitude: lng,
             inputData: { info: 'Initial seed for QGIS Server' },
         },
     });
@@ -25,32 +27,43 @@ async function main() {
 
     // 2. ข้อมูล Hotspots ตั้งต้น 3 ระดับ
     const hotspotSeeds = [
-        { type: HotspotType.PRED_30, conf: 30 },
-        { type: HotspotType.PRED_45, conf: 45 },
-        { type: HotspotType.PRED_60, conf: 60 },
+        { type: HotspotType.PRED_30, conf: 30, isPoly: false },
+        { type: HotspotType.PRED_45, conf: 45, isPoly: false },
+        { type: HotspotType.PRED_60, conf: 60, isPoly: false },
+        { type: HotspotType.PRED_30, conf: 100, isPoly: true }, // สำหรับ layer hotspots_polygons_spatial
     ];
 
     for (const seed of hotspotSeeds) {
-        // ใช้ upsert หรือล้างข้อมูลเก่าก่อนก็ได้ แต่ในที่นี้ใช้ create
-        // เพื่อให้ QGIS Server เห็น Data แน่นอน
         await prisma.hotspot.create({
             data: {
                 missionId: missionId,
                 type: seed.type,
-                latitude: 0,
-                longitude: 0,
+                latitude: lat,
+                longitude: lng,
                 confidence: seed.conf,
-                // สำคัญมาก: ใส่ GeoJSON ให้ตรงกับที่ View ใน SQL ต้องการ
-                geometry: {
-                    type: 'Point',
-                    coordinates: [0, 0],
-                },
+                geometry: seed.isPoly
+                    ? {
+                          type: 'Polygon',
+                          // สร้าง Polygon เล็กๆ รอบจุดพิกัด (มี 3 แกน [lng, lat, alt])
+                          coordinates: [
+                              [
+                                  [lng, lat, 0],
+                                  [lng + 0.001, lat, 0],
+                                  [lng + 0.001, lat + 0.001, 0],
+                                  [lng, lat + 0.001, 0],
+                                  [lng, lat, 0],
+                              ],
+                          ],
+                      }
+                    : {
+                          type: 'Point',
+                          coordinates: [lng, lat, 0], // [lng, lat, alt] สำหรับ GeometryZ
+                      },
             },
         });
     }
 
     console.log('✅ Seeded 3 Hotspots (30, 45, 60) for QGIS Server successfully!');
-
     const username = 'chanok';
     const passwordHash = '$2b$10$fgKEbr.u96aBxiWJBiYemev9PoVCDQuBcahZ8jEiKDhAsdFQgW1wW';
     try {
