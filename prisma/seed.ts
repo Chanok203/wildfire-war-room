@@ -7,12 +7,13 @@ async function main() {
     const lat = 18.684905;
     const lng = 100.213579;
 
-    // 1. ล้างข้อมูลเก่าทิ้งก่อน (ป้องกัน ID ซ้ำและข้อมูลปนกัน)
+    // 1. ล้างข้อมูลเก่า (ลำดับสำคัญ: ลบ Hotspot ก่อน Mission)
     console.log('🧹 Cleaning up old data...');
     await prisma.hotspot.deleteMany({});
     await prisma.mission.deleteMany({});
+    // await prisma.user.deleteMany({}); // เปิดใช้ถ้าต้องการล้าง User ด้วย
 
-    // 2. สร้าง Mission ตั้งต้น
+    // 2. สร้าง Mission ตั้งต้นในพิกัดจังหวัดแพร่
     const initialMission = await prisma.mission.create({
         data: {
             id: missionId,
@@ -28,15 +29,13 @@ async function main() {
 
     console.log(`✅ Created Mission: ${initialMission.id}`);
 
-    // 3. ข้อมูล Hotspots (แยกจุด กับ Polygon ออกจากกันชัดเจน)
+    // 3. ข้อมูล Hotspots (ผสมทั้ง Point และ MultiPolygon)
     const hotspotSeeds = [
-        // กลุ่ม Point (สำหรับ View p30, p45, p60)
-        { type: HotspotType.PRED_30, conf: 30, isPoly: false },
-        { type: HotspotType.PRED_45, conf: 45, isPoly: false },
-        { type: HotspotType.PRED_60, conf: 60, isPoly: false },
-        // กลุ่ม Polygon (ต้องไม่อยู่ในกลุ่ม PRED_30/45/60 เพื่อไม่ให้ View Point พัง)
-        // ผมสมมติใช้ PRED_60 หรือสร้าง type ใหม่ แต่ในที่นี้จะส่งเข้าไปแบบ "ไม่ให้ซ้ำกับ View Point"
-        { type: HotspotType.PRED_60, conf: 100, isPoly: true },
+        { type: HotspotType.PRED_30, conf: 30, isMultiPoly: false },
+        { type: HotspotType.PRED_45, conf: 45, isMultiPoly: false },
+        { type: HotspotType.PRED_60, conf: 60, isMultiPoly: false },
+        // ตัวนี้เป็น MultiPolygon เพื่อทดสอบว่า Migration ใหม่เรารับมือไหวไหม
+        { type: HotspotType.PRED_60, conf: 95, isMultiPoly: true },
     ];
 
     for (const seed of hotspotSeeds) {
@@ -47,16 +46,19 @@ async function main() {
                 latitude: lat,
                 longitude: lng,
                 confidence: seed.conf,
-                geometry: seed.isPoly
+                geometry: seed.isMultiPoly
                     ? {
-                          type: 'Polygon',
+                          type: 'MultiPolygon',
+                          // MultiPolygon ต้องมี Array ซ้อนกัน 4 ชั้น [ [ [ [lng, lat, alt], ... ] ] ]
                           coordinates: [
                               [
-                                  [lng, lat, 0],
-                                  [lng + 0.001, lat, 0],
-                                  [lng + 0.001, lat + 0.001, 0],
-                                  [lng, lat + 0.001, 0],
-                                  [lng, lat, 0],
+                                  [
+                                      [lng, lat, 0],
+                                      [lng + 0.001, lat, 0],
+                                      [lng + 0.001, lat + 0.001, 0],
+                                      [lng, lat + 0.001, 0],
+                                      [lng, lat, 0],
+                                  ],
                               ],
                           ],
                       }
@@ -68,9 +70,7 @@ async function main() {
         });
     }
 
-    console.log('✅ Seeded Hotspots and Mission successfully!');
-
-    
+    console.log('🚀 Seed process completed at Phrae coordinates!');
     const username = 'chanok';
     const passwordHash = '$2b$10$fgKEbr.u96aBxiWJBiYemev9PoVCDQuBcahZ8jEiKDhAsdFQgW1wW';
     try {
