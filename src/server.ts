@@ -20,7 +20,7 @@ nunjucks.configure(path.join(__dirname, '..', 'views'), {
 });
 
 app.use(cors());
-app.use(morgan('combined'));
+app.use(morgan('dev'));
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
 app.use(express.urlencoded());

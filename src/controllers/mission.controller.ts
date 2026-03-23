@@ -6,6 +6,7 @@ import unzipper from 'unzipper';
 import prisma from '../lib/prisma';
 import { removeMissionWorkspace } from '../utils/file.util';
 import { config } from '../config';
+import { HotspotType } from '@prisma/client';
 
 export const listMission_GET = async (req: Request, res: Response) => {
     return res.render('mission/mission-list.html');
@@ -94,7 +95,12 @@ export const viewMission_GET = async (req: Request, res: Response) => {
     const missionId = req.params.missionId as string;
 
     try {
-        const mission = await prisma.mission.findUnique({ where: { id: missionId } });
+        const mission = await prisma.mission.findUnique({
+            where: { id: missionId },
+            include: {
+                _count: { select: { hotspots: true } },
+            },
+        });
         if (!mission) {
             return res.status(404).json({
                 status: 'fail',
@@ -103,8 +109,7 @@ export const viewMission_GET = async (req: Request, res: Response) => {
                 },
             });
         }
-
-        return res.render('mission/mission-view.html', { mission: mission });
+        return res.render('mission/mission-view.html', { mission: mission, qgisUrl: config.qgisUrl, numHotspots: mission._count.hotspots });
     } catch (error) {
         return res.status(500).json({
             status: 'error',
@@ -165,19 +170,39 @@ export const uploadMission_API_POST = async (req: Request, res: Response) => {
             .pipe(unzipper.Extract({ path: extractPath }))
             .promise();
 
-        const resultPath = path.join(extractPath, 'output', 'result.json'); // หรือชื่อไฟล์ที่คุณตกลงกับ Edge ไว้
-        let hotspotsData: any[] = [];
-        if (fs.existsSync(resultPath)) {
-            hotspotsData = JSON.parse(fs.readFileSync(resultPath, 'utf8')).hotspots;
-        }
-
         const inputDataPath = path.join(extractPath, 'input', 'config.json');
+
         let inputData: any = {};
         if (fs.existsSync(inputDataPath)) {
             const configData = JSON.parse(fs.readFileSync(inputDataPath, 'utf8'));
             const { meta_data } = configData;
             const { videoPath, ...userInput } = meta_data;
             inputData = userInput;
+        }
+
+        let hotspotsToSave: any[] = [];
+        const resultPath = path.join(extractPath, 'output', 'result.json'); // หรือชื่อไฟล์ที่คุณตกลงกับ Edge ไว้
+        if (fs.existsSync(resultPath)) {
+            const results = JSON.parse(fs.readFileSync(resultPath, 'utf-8'));
+            hotspotsToSave = results.map((item) => {
+                let type: HotspotType = HotspotType.PRED_30;
+                if (item.filename.includes('45min')) type = HotspotType.PRED_45;
+                if (item.filename.includes('60min')) type = HotspotType.PRED_60;
+
+                const feature = item.geojson.features[0];
+                const coords = feature.geometry.coordinates[0][0];
+
+                const avgLat = coords.reduce((sum: number, p: number[]) => sum + p[1], 0) / coords.length;
+                const avgLng = coords.reduce((sum: number, p: number[]) => sum + p[0], 0) / coords.length;
+                return {
+                    missionId: missionUuid,
+                    type: type,
+                    geometry: feature.geometry,
+                    latitude: avgLat,
+                    longitude: avgLng,
+                    confidence: 1.0,
+                };
+            });
         }
 
         const mission = await prisma.$transaction(async (tx) => {
@@ -197,18 +222,8 @@ export const uploadMission_API_POST = async (req: Request, res: Response) => {
                     inputData: inputData,
                 },
             });
-
             await tx.hotspot.deleteMany({ where: { missionId: missionUuid } });
-            if (hotspotsData.length > 0) {
-                await tx.hotspot.createMany({
-                    data: hotspotsData.map((h) => ({
-                        missionId: missionUuid,
-                        latitude: h.latitude,
-                        longitude: h.longitude,
-                        confidence: h.confidence,
-                    })),
-                });
-            }
+            await tx.hotspot.createMany({ data: hotspotsToSave });
             return mission;
         });
 

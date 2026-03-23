@@ -23,4 +23,6 @@ export const config = {
     redisUrl: getEnv('REDIS_URL'),
     secretKey: getEnv('SECRET_KEY'),
     missionsDir: path.resolve(__dirname, '..', 'missions'),
+    qgisUrl: getEnv('QGIS_URL'),
+    qgisProjectPath: getEnv('QGIS_PROJECT_PATH'),
 } as const;

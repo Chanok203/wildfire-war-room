@@ -3,7 +3,7 @@
 {% block title %}Mission View{% endblock title %}
 
 {% block style %}
-<link rel="stylesheet" href="/public/vendor/leaflet/css/leaflet.css">
+<link rel="stylesheet" href="/public/vendor/maplibre-gl/css/maplibre-gl.css">
 <style>
     #map {
         width: 100%;
@@ -36,7 +36,37 @@
         </div>
         <div class="col-md-4 d-flex justify-content-center bg-light p-3">
             <form action="#" class="w-100" id="dataForm">
-                <h3 class="mb-4 text-center">Hot Spot Forecast</h3>
+                <h3 class="mb-4 text-center">Hotspots</h3>
+                <div class="row align-items-center">
+                    <div class="col">
+                        <label>Lead Time:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <select id="type-select" class="selectpicker form-control" multiple data-actions-box="true"
+                            data-selected-text-format="count > 3" data-container="body" title="Select ...">
+                            <option value="PRED_30" selected>30 Minutes</option>
+                            <option value="PRED_45">45 Minutes</option>
+                            <option value="PRED_60">60 Minutes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row align-items-center">
+                    <div class="col">
+                        <label>Patrol Route:</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <select id="patrol-select" class="selectpicker form-control" multiple data-actions-box="true"
+                            data-selected-text-format="count > 3" data-container="body" title="Select ...">
+                            <option value="patrol_walking_67_68" selected>Walking</option>
+                            <option value="patrol_motorcycle_67_68">Motorcycle</option>
+                            <option value="patrol_car_67_68">Car</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+                <h3 class="my-4 text-center">Meta Data</h3>
                 <!-- droneName -->
                 <div class="row mb-3 align-items-center">
                     <div class="col">
@@ -55,28 +85,6 @@
                     <div class="col-sm-9">
                         <input type="text" name="missionName" id="missionName" class="form-control"
                             value="{{mission.inputData.missionName}}" placeholder="mission_01" disabled>
-                    </div>
-                </div>
-
-                <!-- focalLen -->
-                <div class="row mb-3 align-items-center">
-                    <div class="col">
-                        <label for="focalLen" class="col-form-label text-sm-end">focal_len:</label>
-                    </div>
-                    <div class="col-sm-9">
-                        <input type="number" step="0.01" name="focalLen" id="focalLen" class="form-control"
-                            value="{{mission.inputData.focalLen}}" placeholder="24.00" disabled>
-                    </div>
-                </div>
-
-                <!-- dzoomRatio -->
-                <div class="row mb-3 align-items-center">
-                    <div class="col">
-                        <label for="dzoomRatio" class="col-form-label text-sm-end">dzoom_ratio:</label>
-                    </div>
-                    <div class="col-sm-9">
-                        <input type="number" step="0.01" name="dzoomRatio" id="dzoomRatio" class="form-control"
-                            placeholder="1.00" value="{{mission.inputData.dzoomRatio}}" disabled>
                     </div>
                 </div>
 
@@ -102,60 +110,28 @@
                     </div>
                 </div>
 
-                <!-- relAlt -->
+                <!-- wind_speed -->
                 <div class="row mb-3 align-items-center">
                     <div class="col">
-                        <label for="relAlt" class="col-form-label text-sm-end">rel_alt:</label>
+                        <label for="windSpeed" class="col-form-label text-sm-end">Wind Speed (m/s):</label>
                     </div>
                     <div class="col-sm-9">
-                        <input type="number" step="0.001" name="relAlt" id="relAlt" class="form-control"
-                            placeholder="75.877" value="{{mission.inputData.relAlt}}" disabled>
+                        <input type="number" step="0.01" name="windSpeed" id="windSpeed" class="form-control"
+                            placeholder="0.00" value="{{mission.inputData.windSpeed}}" disabled>
                     </div>
                 </div>
 
-                <!-- absAlt -->
+                <!-- Wind Direction -->
                 <div class="row mb-3 align-items-center">
                     <div class="col">
-                        <label for="absAlt" class="col-form-label text-sm-end">abs_alt:</label>
+                        <label for="windDirection" class="col-form-label text-sm-end">Wind Direction (°):</label>
                     </div>
                     <div class="col-sm-9">
-                        <input type="number" step="0.001" name="absAlt" id="absAlt" class="form-control"
-                            placeholder="271.385" value="{{mission.inputData.absAlt}}" disabled>
+                        <input type="number" name="windDirection" id="windDirection" min="0" max="359" placeholder="0"
+                            value="{{mission.inputData.windDirection}}" disabled>
                     </div>
                 </div>
 
-                <!-- gbYaw -->
-                <div class="row mb-3 align-items-center">
-                    <div class="col">
-                        <label for="gbYaw" class="col-form-label text-sm-end">gb_yaw:</label>
-                    </div>
-                    <div class="col-sm-9">
-                        <input type="number" step="0.1" name="gbYaw" id="gbYaw" class="form-control" placeholder="-8.1"
-                            value="{{mission.inputData.gbYaw}}" disabled>
-                    </div>
-                </div>
-
-                <!-- gbPitch -->
-                <div class="row mb-3 align-items-center">
-                    <div class="col">
-                        <label for="gbPitch" class="col-form-label text-sm-end">gb_pitch:</label>
-                    </div>
-                    <div class="col-sm-9">
-                        <input type="number" step="0.1" name="gbPitch" id="gbPitch" class="form-control"
-                            value="{{mission.inputData.gbPitch}}" placeholder="-86.2" disabled>
-                    </div>
-                </div>
-
-                <!-- gbRoll -->
-                <div class="row mb-3 align-items-center">
-                    <div class="col">
-                        <label for="gbRoll" class="col-form-label text-sm-end">gb_roll:</label>
-                    </div>
-                    <div class="col-sm-9">
-                        <input type="number" step="0.1" name="gbRoll" id="gbRoll" class="form-control" placeholder="0.0"
-                            value="{{mission.inputData.gbRoll}}" disabled>
-                    </div>
-                </div>
             </form>
         </div>
     </div>
@@ -163,6 +139,11 @@
 {% endblock body %}
 
 {% block script %}
-<script src="/public/vendor/leaflet/js/leaflet.js"></script>
+<script>
+    window.APP_CONFIG = {
+        qgisUrl: "{{ qgisUrl }}",
+    }
+</script>
+<script src="/public/vendor/maplibre-gl/js/maplibre-gl.js"></script>
 <script src="/public/js/mission-view.js"></script>
 {% endblock script %}
